@@ -3,7 +3,9 @@ __author__ = 'haerakai & molkoo'
 
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-import os
+import os, urllib3
+
+urllib3.disable_warnings()
 
 token = 'input your token'
 
@@ -11,13 +13,12 @@ home = os.path.expanduser("~")
 path_userdb = home + '/uou_alarmi_bot/userdb'
 
 def init_users():
+	global users
 	if os.path.exists(path_userdb):
 		with open(path_userdb, 'r+') as f:
-			global users
 			users = f.read().splitlines()
 	else:
 		with open(path_userdb, 'w') as f:
-			global users
 			users = []
 
 def start(bot, update):

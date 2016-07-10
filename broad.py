@@ -11,13 +11,12 @@ path_userdb = home + '/uou_alarmi_bot/userdb'
 path_crawldb = home + '/uou_alarmi/uou_alarmi/spiders/crawldb'
 
 def init_users():
+	global users
 	if os.path.exists(path_userdb):
 		with open(path_userdb, 'r+') as f:
-			global users
 			users = f.read().splitlines()
 	else:
 		with open(path_userdb, 'w') as f:
-			global users
 			users = []
 
 def broad():
