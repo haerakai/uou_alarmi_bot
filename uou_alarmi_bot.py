@@ -4,52 +4,85 @@ __author__ = 'haerakai & molkoo'
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import os, urllib3
+import MySQLdb.cursors
 
 urllib3.disable_warnings()
 
-token = 'input your token'
-
-home = os.path.expanduser("~")
-path_userdb = home + '/uou_alarmi_bot/userdb'
-
-def init_users():
-	global users
-	if os.path.exists(path_userdb):
-		with open(path_userdb, 'r+') as f:
-			users = f.read().splitlines()
-	else:
-		with open(path_userdb, 'w') as f:
-			users = []
+token = '222290220:AAHE2Hpa5SQDFkaWximJB9FY5Y3dNxW8C0M'
 
 def start(bot, update):
+	try:
+		conn = MySQLdb.connect(user='alarmi', passwd='alarmi', db='uou_alarmi', host='localhost', charset='utf8', use_unicode='True')
+		cursor = conn.cursor()
+	
+	except MySQLdb.Error, e:
+		print "Error %d: %s" % (e.args[0], e.args[1])
+		sys.exit(1)
+
+
 	user_id = update.message.chat_id
-	if not str(user_id) in users:
-		with open(path_userdb, 'a') as f:
-			f.write(str(user_id)+'\n')
-		users.append(str(user_id))
-		msg = '가입 완료. 울산대 알리미가 알림을 시작합니다.'
-	else:
+
+	try:
+		cursor.execute("""select * from uou_alarmi_userdb where userid=%s""" % str(user_id))
+		result = cursor.fetchone()
+	
+	except MySQLdb.Error, e:
+		print "Error %d: %s" % (e.args[0], e.args[1])
+		sys.exit(1)
+	
+	if result:
 		msg = '이미 가입하셨습니다.'
 	
-	bot.sendMessage(chat_id=user_id, text=msg)
-
-def stop(bot, update):
-	user_id = update.message.chat_id
-	if str(user_id) in users:
-		users.remove(str(user_id))
-		with open(path_userdb, 'w+') as f:
-			for user in users:
-				f.write(str(user)+'\n')
-		msg = '탈퇴 완료. 울산대 알리미가 더이상 알림을 보내지 않습니다.'
 	else:
-		msg = '아직 가입하지 않으셨습니다.'
+		try:
+			cursor.execute("""insert into uou_alarmi.uou_alarmi_userdb (userid) values (%s)""" % str(user_id))
+			conn.commit()
+			msg = '가입 완료. 울산대 알리미가 알림을 시작합니다.'
+		
+		except MySQLdb.Error, e:
+			print "Error %d: %s" % (e.args[0], e.args[1])
+			sys.exit(1)
+
+	conn.close()
+	bot.sendMessage(chat_id=user_id, text=msg)
 	
+def stop(bot, update):
+	try:
+		conn = MySQLdb.connect(user='molkoo', passwd='7qmffor', db='uou_alarmi', host='localhost', charset='utf8', use_unicode='True')
+		cursor = conn.cursor()
+		
+	except MySQLdb.Error, e:
+		print "Error %d: %s" % (e.args[0], e.args[1])
+		sys.exit(1)
+
+	user_id = update.message.chat_id
+
+	try:	
+		cursor.execute("""select * from uou_alarmi_userdb where userid = %s""" % str(user_id))
+		result = cursor.fetchone()
+	
+	except MySQLdb.Error, e:
+		print "Error %d: %s" % (e.args[0], e.args[1])
+		sys.exit(1)
+	
+	if result:
+		try:
+			cursor.execute("""delete from uou_alarmi_userdb where userid = %s""" % (str(user_id)))
+			conn.commit()
+			msg = '탈퇴 완료. 울산대 알리미가 더이상 알림을 보내지 않습니다.'
+	
+		except MySQLdb.Error, e:
+			print "Error %d: %s" % (e.args[0], e.args[1])
+			sys.exit(1)
+
+	else:	
+		msg = '탈퇴 불가. 가입되어 있지 않습니다.'
+	
+	conn.close()
 	bot.sendMessage(chat_id=user_id, text=msg)
 
 updater = Updater(token)
 dispatcher = updater.dispatcher
-
-init_users()
 
 start_handler = CommandHandler('start', start)
 stop_handler = CommandHandler('stop', stop)
