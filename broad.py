@@ -3,40 +3,64 @@
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import os
+import MySQLdb.cursors
+token = 'your_token'
 
-token = 'input your token'
+def send_arbeit():
+        for data in arbeit_data:
+                msg = '등록일 : ' + data[0].encode('utf-8') + '\n' + '회사명 : ' + data[1].encode('utf-8') + '\n' + '업무내용 : ' + data[2].encode('utf-8') + '\n' + '바로가기 : ' + data[3].encode('utf-8')
+                for u in user:
+                        updater.bot.sendMessage(chat_id=u[0].encode('utf-8'), text=msg)
 
-home = os.path.expanduser("~")
-path_userdb = home + '/uou_alarmi_bot/userdb'
-path_crawldb = home + '/uou_alarmi/uou_alarmi/spiders/crawldb'
+def send_room():
+        for data in room_data:
+                msg = '등록일 : ' + data[0].encode('utf-8') + '\n' + '위치 : ' + data[1].encode('utf-8') + '\n' + '제목 : ' + data[2].encode('utf-8') + '\n' + '가격대(만원) : ' + data[3].encode('utf-8') + '\n' + '바로가기 : ' + data[4].encode('utf-8')
+                for u in user:
+                        updater.bot.sendMessage(chat_id=u[0].encode('utf-8'), text=msg)
 
-def init_users():
-	global users
-	if os.path.exists(path_userdb):
-		with open(path_userdb, 'r+') as f:
-			users = f.read().splitlines()
-	else:
-		with open(path_userdb, 'w') as f:
-			users = []
+def send_barter():
+        for data in barter_data:
+                msg = '등록일 : ' + data[0].encode('utf-8') + '\n' + '제목 : ' + data[1].encode('utf-8') + '\n' + '글쓴이 : ' + data[2].encode('utf-8') + '\n' + '바로가기 : ' + data[3].encode('utf-8')
+                for u in user:
+                        updater.bot.sendMessage(chat_id=u[0].encode('utf-8'), text=msg)
 
 def broad():
-	dates = []
-	names = []
-	titles = []
-	links = []
+	try:
+		conn = MySQLdb.connect(user='user', passwd='passwd', db='uou_alarmi', host='localhost', charset='utf8', use_unicode='True')
+		cursor = conn.cursor()
 
-	with open(path_crawldb, 'r+') as f:
-		data = f.read().splitlines()
+		cursor.execute("select userid from uou_alarmi_userdb")
+		global user
+		user = cursor.fetchall()
+		
+		cursor.execute("select * from uou_alarmi_arbeit")
+		global arbeit_data
+		arbeit_data = cursor.fetchall()
+		
+		cursor.execute("select * from uou_alarmi_room")
+		global room_data
+		room_data = cursor.fetchall()
 
-	n = len(data)
-	for i in range(0,n,4):
-		msg = '등록일 : ' + data[i] + '\n' + '회사명 : ' + data[i+1] + '\n' + '업무내용 : ' + data[i+2] + '\n' + '바로가기 : http://www.ulsan.ac.kr/utopia/info/arbeit/' + data[i+3]
-		for user in users:
-			updater.bot.sendMessage(chat_id=user, text=msg)
+		cursor.execute("select * from uou_alarmi_barter")
+		global barter_data
+		barter_data = cursor.fetchall()
+	
+	except MySQLdb.Error, e:
+		print "Error %d: %s" % (e.args[0], e.args[1])
+		sys.exit(1)
+	
+	if arbeit_data != None:
+		send_arbeit()
+
+	if room_data != None:
+		send_room()
+
+	if barter_data != None:
+		send_barter()
+
 
 updater = Updater(token)
 
-init_users()
 broad()
 
 os._exit(0)

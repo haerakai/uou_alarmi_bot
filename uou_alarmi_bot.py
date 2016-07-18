@@ -8,11 +8,11 @@ import MySQLdb.cursors
 
 urllib3.disable_warnings()
 
-token = '222290220:AAHE2Hpa5SQDFkaWximJB9FY5Y3dNxW8C0M'
+token = 'your_token'
 
 def start(bot, update):
 	try:
-		conn = MySQLdb.connect(user='alarmi', passwd='alarmi', db='uou_alarmi', host='localhost', charset='utf8', use_unicode='True')
+		conn = MySQLdb.connect(user='user', passwd='passwd', db='uou_alarmi', host='localhost', charset='utf8', use_unicode='True')
 		cursor = conn.cursor()
 	
 	except MySQLdb.Error, e:
